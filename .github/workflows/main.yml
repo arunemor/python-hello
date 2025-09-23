@@ -1,9 +1,9 @@
-name: Deploy to Multiple EC2
+name: Deploy to EC2
 
 on:
   push:
     branches:
-      - main
+      - main  # pipeline triggers only on main branch
 
 jobs:
   deploy:
@@ -13,10 +13,19 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Deploy to all servers
+    - name: Copy files to EC2
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "."
+        target: "~/app"
+
+    - name: Install Docker & Deploy
       uses: appleboy/ssh-action@v0.1.8
       with:
-        host: ${{ secrets.EC2_HOSTS }}   # comma-separated: "IP1,IP2,IP3"
+        host: ${{ secrets.EC2_HOST }}
         username: ubuntu
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
@@ -35,12 +44,8 @@ jobs:
           newgrp docker
 
           # Deploy application
-          cd ~/app || mkdir ~/app && cd ~/app
+          cd ~/app
           docker stop myapp || true
           docker rm myapp || true
-          git init  # if repo not cloned yet
-          git remote add origin https://github.com/<user>/<repo>.git || true
-          git fetch
-          git reset --hard origin/main
           docker build -t myapp:latest .
           docker run -d -p 5000:5000 --name myapp myapp:latest
