@@ -37,8 +37,8 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ap-south-1
-      run: |
-        aws secretsmanager put-secret-value \
-          --secret-id github_commit_id \
-          --secret-string "{\"commit_id\":\"${GITHUB_SHA}\"}"
+     # run: |
+        # aws secretsmanager put-secret-value \
+        #   --secret-id github_commit_id \
+        #   --secret-string "{\"commit_id\":\"${GITHUB_SHA}\"}"
 
