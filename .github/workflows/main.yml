@@ -17,8 +17,8 @@ jobs:
     # --- Build Docker image with commit SHA ---
     - name: Build Docker Image
       run: |
-        docker build -t kharwararun/myapp:${GITHUB_SHA} .
-        docker push kharwararun/myapp:${GITHUB_SHA}
+        docker build -t kharwararun/app:${GITHUB_SHA} .
+        docker push kharwararun/app:${GITHUB_SHA}
 
     # --- Update commit ID in AWS Secrets Manager ---
     - name: Update commit ID in Secrets Manager
@@ -55,10 +55,10 @@ jobs:
 
           # Deploy container
           echo "Deploying container with commit $COMMIT_ID..."
-          sudo docker pull kharwararun/myapp:$COMMIT_ID
-          sudo docker stop myapp || true
-          sudo docker rm myapp || true
-          sudo docker run -d --name myapp -p 5000:5000 kharwararun/myapp:$COMMIT_ID
+          sudo docker pull kharwararun/app:$COMMIT_ID
+          sudo docker stop app || true
+          sudo docker rm app || true
+          sudo docker run -d --name app -p 5000:5000 kharwararun/app:$COMMIT_ID
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
