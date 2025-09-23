@@ -3,13 +3,14 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main  # pipeline triggers only on main branch
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+    # --- Checkout code ---
     - name: Checkout Code
       uses: actions/checkout@v3
 
@@ -41,19 +42,17 @@ jobs:
           # Install Docker if missing
           if ! command -v docker &> /dev/null
           then
-            echo "Docker not found. Installing..."
             sudo apt update -y
             sudo apt install -y docker.io
             sudo systemctl enable docker
             sudo systemctl start docker
           fi
 
-          # Pull latest Docker image from Docker Hub
-          docker pull kharwararun/myapp:latest
-
-          # Stop old container if exists
+          # Stop and remove old container
           docker stop myapp || true
           docker rm myapp || true
+          docker rmi kharwararun/myapp:latest || true
 
-          # Run new container
+          # Pull and run latest Docker image
+          docker pull kharwararun/myapp:latest
           docker run -d -p 5000:5000 --name myapp --restart always kharwararun/myapp:latest
