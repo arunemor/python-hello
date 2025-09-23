@@ -3,7 +3,7 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main
+      - main  # triggers on main branch
 
 jobs:
   deploy:
@@ -17,7 +17,7 @@ jobs:
     # --- Build Docker Image ---
     - name: Build Docker Image
       run: |
-        docker build -t kharwararun/myapp:latest .
+        docker build -t kharwararun/myapp:${GITHUB_SHA} .
 
     # --- Log in to Docker Hub ---
     - name: Login to Docker Hub
@@ -29,30 +29,16 @@ jobs:
     # --- Push Docker Image ---
     - name: Push Docker Image
       run: |
-        docker push kharwararun/myapp:latest
+        docker push kharwararun/myapp:${GITHUB_SHA}
 
-    # --- Deploy to EC2 ---
-    - name: Deploy on EC2
-      uses: appleboy/ssh-action@v1
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          # Install Docker if missing
-          if ! command -v docker &> /dev/null
-          then
-            sudo apt update -y
-            sudo apt install -y docker.io
-            sudo systemctl enable docker
-            sudo systemctl start docker
-          fi
+    # --- Update Secrets Manager with latest commit ID ---
+    - name: Update GitHub Commit ID in Secrets Manager
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ap-south-1
+      run: |
+        aws secretsmanager put-secret-value \
+          --secret-id github_commit_id \
+          --secret-string "{\"commit_id\":\"${GITHUB_SHA}\"}"
 
-          # Stop and remove old container
-          docker stop myapp || true
-          docker rm myapp || true
-          docker rmi kharwararun/myapp:latest || true
-
-          # Pull and run latest Docker image
-          docker pull kharwararun/myapp:latest
-          docker run -d -p 5000:5000 --name myapp --restart always kharwararun/myapp:latest
