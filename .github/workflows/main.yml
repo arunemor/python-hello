@@ -31,27 +31,26 @@ jobs:
       run: |
         docker push kharwararun/myapp:latest
 
-    # --- Deploy to EC2 (with Docker installation) ---
+    # --- Deploy to EC2 ---
     - name: Deploy to EC2
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.EC2_HOST }}     # <-- EC2 public IP/DNS
-        username: ubuntu                  # <-- default user for Ubuntu AMIs
+        host: ${{ secrets.EC2_HOST }}     # <-- EC2 Public IP / DNS
+        username: ubuntu                  # <-- or ec2-user for Amazon Linux
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # Install Docker if not present
+          # Install Docker if missing
           if ! command -v docker &> /dev/null
           then
-            echo "Docker not found. Installing..."
-            sudo apt update -y
-            sudo apt install -y docker.io
-            sudo systemctl enable docker
-            sudo systemctl start docker
-            sudo usermod -aG docker $USER
+            echo "Installing Docker..."
+            sudo apt update -y || true
+            sudo apt install -y docker.io || true
+            sudo systemctl enable docker || true
+            sudo systemctl start docker || true
           fi
 
-          # Pull & restart container
-          docker pull kharwararun/myapp:latest
-          docker stop myapp || true
-          docker rm myapp || true
-          docker run -d --name myapp -p 5000:5000 kharwararun/myapp:latest
+          echo "Deploying container..."
+          sudo docker pull kharwararun/myapp:latest
+          sudo docker stop myapp || true
+          sudo docker rm myapp || true
+          sudo docker run -d --name myapp -p 5000:5000 kharwararun/myapp:latest
