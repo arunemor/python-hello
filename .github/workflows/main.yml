@@ -49,7 +49,7 @@ jobs:
           fi
 
           # Pull latest Docker image from Docker Hub
-          docker pull yourdockerhubusername/myapp:latest
+          docker pull kharwararun/myapp:latest
 
           # Stop old container if exists
           docker stop myapp || true
