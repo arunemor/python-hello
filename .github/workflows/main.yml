@@ -1,9 +1,9 @@
-name: Deploy to EC2
+name: Deploy to EC2 with Docker Install
 
 on:
   push:
     branches:
-      - main   # or your branch
+      - main   # change if you use another branch
 
 jobs:
   deploy:
@@ -22,13 +22,25 @@ jobs:
         source: "."
         target: "~/app"
 
-    - name: Deploy on EC2
+    - name: Install Docker & Deploy
       uses: appleboy/ssh-action@v0.1.8
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ubuntu
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
+          # --- Install Docker if not already installed ---
+          if ! command -v docker &> /dev/null
+          then
+            echo "Docker not found. Installing..."
+            sudo apt update -y
+            sudo apt install -y docker.io
+            sudo systemctl enable docker
+            sudo systemctl start docker
+            sudo usermod -aG docker ubuntu
+          fi
+
+          # --- Deploy Application ---
           cd ~/app
           docker stop myapp || true
           docker rm myapp || true
