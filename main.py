@@ -8,5 +8,5 @@ def hello():
     return "Hello, When creating or permissions.."
 
 if __name__ == "__main__":
-    # Run on port 5000 (you can change it)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    # Only for local testing
+    app.run(host="0.0.0.0", port=5000)
