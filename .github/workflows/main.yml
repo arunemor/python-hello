@@ -3,14 +3,14 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main  # triggers on main branch
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    # --- Checkout code ---
+    # --- Checkout Code ---
     - name: Checkout Code
       uses: actions/checkout@v3
 
@@ -31,15 +31,24 @@ jobs:
       run: |
         docker push kharwararun/myapp:${GITHUB_SHA}
 
-    # --- Deploy on EC2 ---
-    - name: Deploy to EC2
-      uses: appleboy/ssh-action@v1.0.3
+    # --- Configure AWS Credentials ---
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          docker pull kharwararun/myapp:${GITHUB_SHA}
-          docker stop myapp || true
-          docker rm myapp || true
-          docker run -d --name myapp -p 5000:5000 kharwararun/myapp:${GITHUB_SHA}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-south-1
+
+    # --- Deploy to EC2 via SSM ---
+    - name: Deploy App on EC2
+      run: |
+        aws ssm send-command \
+          --targets "Key=tag:Name,Values=MyEC2App" \
+          --document-name "AWS-RunShellScript" \
+          --comment "Deploy latest Docker image" \
+          --parameters 'commands=[
+            "docker pull kharwararun/myapp:${GITHUB_SHA}",
+            "docker stop myapp || true",
+            "docker rm myapp || true",
+            "docker run -d --name myapp -p 5000:5000 kharwararun/myapp:${GITHUB_SHA}"
+          ]'
